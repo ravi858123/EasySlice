@@ -1,0 +1,49 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:        
+  push:
+    branches: [main]
+    tags: ["v*"]            
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Installeren etc.
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: .EXE maken
+        run: >
+          pyinstaller --noconfirm --onefile --windowed --name EasySlice --icon icon.ico --add-data "icon.ico;." --add-data "logo.png;."
+          --collect-all shapely --collect-data trimesh --collect-data sv_ttk --collect-submodules trimesh
+          app.py
+
+      - name: Inpakken van programma
+        shell: pwsh
+        run: |
+          mkdir pkg
+          Copy-Item dist/EasySlice.exe pkg/
+          Copy-Item README.md pkg/
+          Compress-Archive -Path pkg/* -DestinationPath EasySlice-win64.zip
+
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EasySlice-win64
+          path: pkg/
+
+      - name: Release (alleen bij tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: EasySlice-win64.zip
