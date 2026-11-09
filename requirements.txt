@@ -1,0 +1,8 @@
+numpy
+trimesh
+shapely>=2.0
+networkx
+scipy
+lxml
+pycollada
+sv-ttk
